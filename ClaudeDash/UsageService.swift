@@ -30,8 +30,13 @@ class UsageService {
 
   /// Fetches usage data from the API.
   func fetchUsage() {
-    guard let token = readTokenFromKeychain() else {
+    guard let credentials = readOAuthCredentialsFromKeychain() else {
       error = "Auth required — sign in to Claude Code first"
+      return
+    }
+
+    if let expiresAt = credentials.expiresAt, expiresAt <= Date() {
+      error = "Auth token expired — sign in to Claude Code again"
       return
     }
 
@@ -39,7 +44,7 @@ class UsageService {
 
     var request = URLRequest(url: url)
     request.httpMethod = "GET"
-    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    request.setValue("Bearer \(credentials.accessToken)", forHTTPHeaderField: "Authorization")
     request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
 
     URLSession.shared.dataTask(with: request) { [weak self] data, response, networkError in
@@ -55,7 +60,11 @@ class UsageService {
         }
 
         guard httpResponse.statusCode == 200 else {
-          self?.error = "API error (HTTP \(httpResponse.statusCode))"
+          if httpResponse.statusCode == 401 {
+            self?.error = "Auth expired or revoked — sign in to Claude Code again"
+          } else {
+            self?.error = "API error (HTTP \(httpResponse.statusCode))"
+          }
           return
         }
 
@@ -76,8 +85,13 @@ class UsageService {
     }.resume()
   }
 
-  /// Reads the OAuth access token from the macOS Keychain via the security CLI.
-  private func readTokenFromKeychain() -> String? {
+  private struct OAuthCredentials {
+    let accessToken: String
+    let expiresAt: Date?
+  }
+
+  /// Reads OAuth credentials from the macOS Keychain via the security CLI.
+  private func readOAuthCredentialsFromKeychain() -> OAuthCredentials? {
     let process = Process()
     let pipe = Pipe()
 
@@ -104,10 +118,13 @@ class UsageService {
     guard let jsonData = raw.data(using: .utf8),
           let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
           let oauthEntry = json["claudeAiOauth"] as? [String: Any],
-          let token = oauthEntry["accessToken"] as? String else {
+          let accessToken = oauthEntry["accessToken"] as? String else {
       return nil
     }
 
-    return token
+    let expiresAt = (oauthEntry["expiresAt"] as? NSNumber)
+      .map { Date(timeIntervalSince1970: $0.doubleValue / 1000.0) }
+
+    return OAuthCredentials(accessToken: accessToken, expiresAt: expiresAt)
   }
 }
