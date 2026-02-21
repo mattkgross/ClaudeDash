@@ -91,7 +91,18 @@ struct UsageView: View {
       .padding(.bottom, 10)
     }
     .frame(width: 280)
-    .background(.ultraThinMaterial)
+    .background {
+      RoundedRectangle(cornerRadius: 12)
+        .fill(.ultraThinMaterial)
+        .overlay(
+          RoundedRectangle(cornerRadius: 12)
+            .fill(Color.black.opacity(0.25))
+        )
+        .overlay(
+          RoundedRectangle(cornerRadius: 12)
+            .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
+        )
+    }
   }
 
   /// Toggles the launch-at-login setting via ServiceManagement.
