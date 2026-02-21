@@ -1,0 +1,13 @@
+# macOS
+:q.DS_Store
+
+# Xcode
+xcuserdata/
+*.xcscmblueprint
+DerivedData/
+
+# Debug logs
+firebase-debug.log
+
+# Claude
+.claude/
