@@ -33,8 +33,8 @@ struct UsageView: View {
       if let usage = service.usage {
         VStack(spacing: 16) {
           UsageRow(icon: "⚡", label: "Session", bucket: usage.fiveHour)
-          UsageRow(icon: "🌙", label: "Weekly (All)", bucket: usage.sevenDay)
-          UsageRow(icon: "✨", label: "Sonnet", bucket: usage.sevenDaySonnet)
+          UsageRow(icon: "🌙", label: "Weekly (All)", bucket: usage.sevenDay, showDayMarkers: true)
+          UsageRow(icon: "✨", label: "Sonnet", bucket: usage.sevenDaySonnet, showDayMarkers: true)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -124,6 +124,7 @@ struct UsageRow: View {
   let icon: String
   let label: String
   let bucket: UsageBucket
+  var showDayMarkers: Bool = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
@@ -137,28 +138,59 @@ struct UsageRow: View {
           .foregroundStyle(bucket.tierColor)
       }
 
-      // Gradient progress bar with glow at high usage.
+      // Gradient progress bar with optional day-of-week markers for weekly buckets.
       GeometryReader { geometry in
-        ZStack(alignment: .leading) {
-          RoundedRectangle(cornerRadius: 4)
-            .fill(Color.primary.opacity(0.1))
-            .frame(height: 6)
+        VStack(spacing: 0) {
+          ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 4)
+              .fill(Color.primary.opacity(0.1))
+              .frame(height: 6)
 
-          RoundedRectangle(cornerRadius: 4)
-            .fill(bucket.tierGradient)
-            .frame(width: max(0, geometry.size.width * bucket.fraction), height: 6)
-            .shadow(
-              color: bucket.shouldGlow ? bucket.tierColor.opacity(0.6) : .clear,
-              radius: bucket.shouldGlow ? 4 : 0,
-              y: 0
-            )
+            RoundedRectangle(cornerRadius: 4)
+              .fill(bucket.tierGradient)
+              .frame(width: max(0, geometry.size.width * bucket.fraction), height: 6)
+              .shadow(
+                color: bucket.shouldGlow ? bucket.tierColor.opacity(0.6) : .clear,
+                radius: bucket.shouldGlow ? 4 : 0,
+                y: 0
+              )
+          }
+
+          if showDayMarkers {
+            DayMarkerRow(markers: bucket.dayBoundaryMarkers, barWidth: geometry.size.width)
+              .frame(height: 16)
+          }
         }
       }
-      .frame(height: 6)
+      .frame(height: showDayMarkers ? 22 : 6)
 
       Text(bucket.formattedResetTime)
         .font(.caption2)
         .foregroundStyle(.tertiary)
+    }
+  }
+}
+
+/// Renders day-of-week boundary markers below a 7-day progress bar.
+private struct DayMarkerRow: View {
+  let markers: [DayMarker]
+  let barWidth: CGFloat
+
+  var body: some View {
+    ZStack {
+      ForEach(Array(markers.enumerated()), id: \.offset) { _, marker in
+        VStack(spacing: 1) {
+          Rectangle()
+            .fill(Color.primary.opacity(marker.isToday ? 0.4 : 0.2))
+            .frame(width: 0.5, height: 4)
+          Text(marker.label)
+            .font(.system(size: 7, design: .monospaced))
+            .fontWeight(marker.isToday ? .semibold : .regular)
+            .foregroundStyle(Color.primary.opacity(marker.isToday ? 0.6 : 0.3))
+        }
+        .fixedSize()
+        .position(x: barWidth * marker.position, y: 8)
+      }
     }
   }
 }

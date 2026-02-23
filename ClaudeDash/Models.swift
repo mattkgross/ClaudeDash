@@ -1,5 +1,12 @@
 import SwiftUI
 
+/// Represents a day boundary marker on the 7-day progress bar.
+struct DayMarker {
+  let position: Double
+  let label: String
+  let isToday: Bool
+}
+
 /// API response from the Anthropic usage endpoint.
 struct UsageResponse: Codable {
   let fiveHour: UsageBucket
@@ -90,9 +97,9 @@ struct UsageBucket: Codable {
     percentage >= 80
   }
 
-  /// Formatted reset time string for display.
-  var formattedResetTime: String {
-    guard let resetsAt = resetsAt else { return "" }
+  /// Parses the ISO8601 reset date string into a Date object.
+  var parsedResetDate: Date? {
+    guard let resetsAt = resetsAt else { return nil }
 
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -104,7 +111,30 @@ struct UsageBucket: Codable {
       date = formatter.date(from: resetsAt)
     }
 
-    guard let resetDate = date else { return "" }
+    return date
+  }
+
+  /// Day boundary markers for the 7-day progress bar (6 interior ticks at each day boundary).
+  var dayBoundaryMarkers: [DayMarker] {
+    guard let resetDate = parsedResetDate else { return [] }
+
+    let calendar = Calendar.current
+    let windowStart = calendar.date(byAdding: .day, value: -7, to: resetDate)!
+    let today = calendar.startOfDay(for: Date())
+    let weekdayLetters = ["U", "M", "T", "W", "R", "F", "S"]
+
+    return (1...6).map { dayOffset in
+      let boundaryDate = calendar.date(byAdding: .day, value: dayOffset, to: windowStart)!
+      let weekday = calendar.component(.weekday, from: boundaryDate)
+      let label = weekdayLetters[weekday - 1]
+      let isToday = calendar.startOfDay(for: boundaryDate) == today
+      return DayMarker(position: Double(dayOffset) / 7.0, label: label, isToday: isToday)
+    }
+  }
+
+  /// Formatted reset time string for display.
+  var formattedResetTime: String {
+    guard let resetDate = parsedResetDate else { return "" }
 
     let now = Date()
     let interval = resetDate.timeIntervalSince(now)
