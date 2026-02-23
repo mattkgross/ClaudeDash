@@ -182,7 +182,7 @@ private struct DayMarkerRow: View {
         VStack(spacing: 1) {
           Rectangle()
             .fill(Color.primary.opacity(marker.isToday ? 0.4 : 0.2))
-            .frame(width: 0.5, height: 4)
+            .frame(width: 1, height: 4)
           Text(marker.label)
             .font(.system(size: 7, design: .monospaced))
             .fontWeight(marker.isToday ? .semibold : .regular)
