@@ -2,6 +2,9 @@ import Foundation
 import Observation
 
 /// Fetches Claude usage data from the Anthropic API using OAuth credentials from the macOS Keychain.
+///
+/// Reads initial credentials from keychain, then manages its own token refresh cycle in memory.
+/// Never writes back to keychain — Claude Code owns that storage.
 @Observable
 class UsageService {
   var usage: UsageResponse?
@@ -12,6 +15,9 @@ class UsageService {
   private let pollingInterval: TimeInterval = 60
   private let oauthClientID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
   private let oauthTokenURL = "https://platform.claude.com/v1/oauth/token"
+
+  /// In-memory credentials, refreshed independently of Claude Code.
+  private var cachedCredentials: OAuthCredentials?
 
   init() {
     fetchUsage()
@@ -35,10 +41,15 @@ class UsageService {
     Task { await fetchUsageAsync() }
   }
 
-  /// Fetches usage data from the API, automatically refreshing expired tokens.
+  /// Fetches usage data, using cached in-memory credentials and refreshing as needed.
   @MainActor
   private func fetchUsageAsync() async {
-    guard var credentials = readOAuthCredentialsFromKeychain() else {
+    // Use cached credentials if available, otherwise read from keychain.
+    if cachedCredentials == nil {
+      cachedCredentials = readOAuthCredentialsFromKeychain()
+    }
+
+    guard var credentials = cachedCredentials else {
       error = "Auth required — sign in to Claude Code first"
       return
     }
@@ -47,13 +58,21 @@ class UsageService {
     if credentials.isExpired(buffer: 300) {
       if let refreshed = await refreshAccessToken(using: credentials) {
         credentials = refreshed
+        cachedCredentials = refreshed
       } else {
-        error = "Auth token expired — sign in to Claude Code again"
-        return
+        // Refresh failed — try re-reading keychain in case user ran /login.
+        if let fresh = readOAuthCredentialsFromKeychain(), fresh.accessToken != credentials.accessToken {
+          credentials = fresh
+          cachedCredentials = fresh
+        } else {
+          error = "Token expired — run /login in Claude Code"
+          cachedCredentials = nil
+          return
+        }
       }
     }
 
-    let result = await performUsageRequest(with: credentials)
+    let result = await performUsageRequest(with: credentials.accessToken)
 
     switch result {
     case .success(let response):
@@ -61,10 +80,11 @@ class UsageService {
       error = nil
       lastUpdated = Date()
 
-    case .failure(.unauthorized):
-      // Reactive refresh: try once on 401.
+    case .failure(let fetchError) where fetchError.mayBeStaleToken:
+      // Try refreshing the token in memory.
       if let refreshed = await refreshAccessToken(using: credentials) {
-        let retry = await performUsageRequest(with: refreshed)
+        cachedCredentials = refreshed
+        let retry = await performUsageRequest(with: refreshed.accessToken)
         switch retry {
         case .success(let response):
           usage = response
@@ -74,7 +94,22 @@ class UsageService {
           error = retryError.message
         }
       } else {
-        error = "Auth expired or revoked — sign in to Claude Code again"
+        // Refresh failed — try re-reading keychain in case user ran /login.
+        if let fresh = readOAuthCredentialsFromKeychain(), fresh.accessToken != credentials.accessToken {
+          cachedCredentials = fresh
+          let retry = await performUsageRequest(with: fresh.accessToken)
+          switch retry {
+          case .success(let response):
+            usage = response
+            error = nil
+            lastUpdated = Date()
+          case .failure(let retryError):
+            error = retryError.message
+          }
+        } else {
+          error = "Token expired — run /login in Claude Code"
+          cachedCredentials = nil
+        }
       }
 
     case .failure(let fetchError):
@@ -88,15 +123,25 @@ class UsageService {
     case network(String)
     case invalidResponse
     case unauthorized
+    case rateLimited
     case httpError(Int)
     case noData
     case parseFailed
+
+    /// Whether this error suggests the token may be invalid and a keychain re-read could help.
+    var mayBeStaleToken: Bool {
+      switch self {
+      case .unauthorized, .rateLimited: return true
+      default: return false
+      }
+    }
 
     var message: String {
       switch self {
       case .network(let msg): return "Network error: \(msg)"
       case .invalidResponse: return "Invalid response"
       case .unauthorized: return "Auth expired or revoked — sign in to Claude Code again"
+      case .rateLimited: return "Rate limited — token may be invalid, use Claude Code to refresh"
       case .httpError(let code): return "API error (HTTP \(code))"
       case .noData: return "No data received"
       case .parseFailed: return "Failed to parse response"
@@ -105,14 +150,14 @@ class UsageService {
   }
 
   /// Performs the actual GET request to the usage API.
-  private func performUsageRequest(with credentials: OAuthCredentials) async -> Result<UsageResponse, FetchError> {
+  private func performUsageRequest(with accessToken: String) async -> Result<UsageResponse, FetchError> {
     guard let url = URL(string: "https://api.anthropic.com/api/oauth/usage") else {
       return .failure(.invalidResponse)
     }
 
     var request = URLRequest(url: url)
     request.httpMethod = "GET"
-    request.setValue("Bearer \(credentials.accessToken)", forHTTPHeaderField: "Authorization")
+    request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
     request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
 
     let data: Data
@@ -129,6 +174,10 @@ class UsageService {
 
     if httpResponse.statusCode == 401 {
       return .failure(.unauthorized)
+    }
+
+    if httpResponse.statusCode == 429 {
+      return .failure(.rateLimited)
     }
 
     guard httpResponse.statusCode == 200 else {
@@ -149,7 +198,6 @@ class UsageService {
     let accessToken: String
     let expiresAt: Date?
     let refreshToken: String?
-    let rawJSON: [String: Any]
 
     /// Returns true if the token expires within the given buffer (in seconds).
     func isExpired(buffer: TimeInterval = 300) -> Bool {
@@ -193,12 +241,12 @@ class UsageService {
       .map { Date(timeIntervalSince1970: $0.doubleValue / 1000.0) }
     let refreshToken = oauthEntry["refreshToken"] as? String
 
-    return OAuthCredentials(accessToken: accessToken, expiresAt: expiresAt, refreshToken: refreshToken, rawJSON: json)
+    return OAuthCredentials(accessToken: accessToken, expiresAt: expiresAt, refreshToken: refreshToken)
   }
 
   // MARK: - Token Refresh
 
-  /// Refreshes the access token using the refresh token, writes updated credentials to keychain.
+  /// Refreshes the access token using the refresh token. Keeps new credentials in memory only — never writes to keychain.
   private func refreshAccessToken(using credentials: OAuthCredentials) async -> OAuthCredentials? {
     guard let refreshToken = credentials.refreshToken else { return nil }
     guard let url = URL(string: oauthTokenURL) else { return nil }
@@ -236,44 +284,6 @@ class UsageService {
     let expiresIn = tokenResponse["expires_in"] as? Double
     let newExpiresAt: Date? = expiresIn.map { Date().addingTimeInterval($0) }
 
-    // Rebuild the keychain JSON, preserving all existing fields.
-    var updatedJSON = credentials.rawJSON
-    var updatedOAuth = (updatedJSON["claudeAiOauth"] as? [String: Any]) ?? [:]
-    updatedOAuth["accessToken"] = newAccessToken
-    updatedOAuth["refreshToken"] = newRefreshToken
-    if let newExpiresAt = newExpiresAt {
-      updatedOAuth["expiresAt"] = Int64(newExpiresAt.timeIntervalSince1970 * 1000.0)
-    }
-    updatedJSON["claudeAiOauth"] = updatedOAuth
-
-    writeCredentialsToKeychain(updatedJSON)
-
-    return OAuthCredentials(accessToken: newAccessToken, expiresAt: newExpiresAt, refreshToken: newRefreshToken, rawJSON: updatedJSON)
-  }
-
-  /// Writes updated credentials JSON back to the macOS Keychain.
-  private func writeCredentialsToKeychain(_ json: [String: Any]) {
-    guard let data = try? JSONSerialization.data(withJSONObject: json),
-          let jsonString = String(data: data, encoding: .utf8) else {
-      return
-    }
-
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/security")
-    process.arguments = [
-      "add-generic-password", "-U",
-      "-s", "Claude Code-credentials",
-      "-a", NSUserName(),
-      "-w", jsonString,
-    ]
-    process.standardOutput = FileHandle.nullDevice
-    process.standardError = FileHandle.nullDevice
-
-    do {
-      try process.run()
-      process.waitUntilExit()
-    } catch {
-      // Non-fatal — the session still uses the refreshed tokens in memory.
-    }
+    return OAuthCredentials(accessToken: newAccessToken, expiresAt: newExpiresAt, refreshToken: newRefreshToken)
   }
 }
