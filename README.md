@@ -17,17 +17,12 @@ A macOS menu bar app that shows your Claude Code usage at a glance. Displays ses
    git clone https://github.com/mattkgross/ClaudeDash.git
    ```
 
-2. Open in Xcode:
+2. Install:
    ```
-   open ClaudeDash.xcodeproj
+   make install
    ```
 
-3. Build and run (`Cmd+R`). The app appears in your menu bar as `⚡ X%`.
-
-Alternatively, build from the command line:
-```
-xcodebuild -project ClaudeDash.xcodeproj -scheme ClaudeDash -configuration Release build
-```
+3. Find "ClaudeDash" in your applications folder and run it. It will show up in your menu bar.
 
 ## How It Works
 
