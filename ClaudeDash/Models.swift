@@ -7,41 +7,10 @@ struct DayMarker {
   let isToday: Bool
 }
 
-/// API response from the Anthropic usage endpoint.
-struct UsageResponse: Codable {
-  let fiveHour: UsageBucket
-  let sevenDay: UsageBucket
-  let sevenDaySonnet: UsageBucket
-
-  enum CodingKeys: String, CodingKey {
-    case fiveHour = "five_hour"
-    case sevenDay = "seven_day"
-    case sevenDaySonnet = "seven_day_sonnet"
-  }
-}
-
-/// A single usage bucket with utilization percentage and reset time.
-struct UsageBucket: Codable {
-  let utilization: Double
-  let resetsAt: String?
-
-  enum CodingKeys: String, CodingKey {
-    case utilization
-    case resetsAt = "resets_at"
-  }
-
-  /// Usage as an integer percentage (0–100). API returns values already as percentages.
-  var percentage: Int {
-    Int(utilization.rounded())
-  }
-
-  /// Utilization as a 0–1 fraction for progress bar rendering.
-  var fraction: Double {
-    min(utilization / 100.0, 1.0)
-  }
-
-  /// Color tier based on usage level.
-  var tierColor: Color {
+/// Shared color tier helpers for usage and spending percentage displays.
+enum UsageTier {
+  /// Returns the tier color for a given percentage (0–100).
+  static func color(for percentage: Int) -> Color {
     switch percentage {
     case ..<50:
       return Color(red: 52 / 255, green: 211 / 255, blue: 153 / 255)
@@ -54,8 +23,8 @@ struct UsageBucket: Codable {
     }
   }
 
-  /// Gradient for the progress bar, transitioning from a lighter to deeper shade of the tier color.
-  var tierGradient: LinearGradient {
+  /// Returns a left-to-right gradient for a given percentage tier.
+  static func gradient(for percentage: Int) -> LinearGradient {
     switch percentage {
     case ..<50:
       return LinearGradient(
@@ -92,9 +61,60 @@ struct UsageBucket: Codable {
     }
   }
 
+  /// Whether the percentage is high enough to show a glow effect.
+  static func shouldGlow(for percentage: Int) -> Bool {
+    percentage >= 80
+  }
+}
+
+/// API response from the Anthropic usage endpoint.
+struct UsageResponse: Codable {
+  let fiveHour: UsageBucket
+  let sevenDay: UsageBucket
+  let sevenDaySonnet: UsageBucket
+  let extraUsage: SpendingData?
+
+  enum CodingKeys: String, CodingKey {
+    case fiveHour = "five_hour"
+    case sevenDay = "seven_day"
+    case sevenDaySonnet = "seven_day_sonnet"
+    case extraUsage = "extra_usage"
+  }
+}
+
+/// A single usage bucket with utilization percentage and reset time.
+struct UsageBucket: Codable {
+  let utilization: Double
+  let resetsAt: String?
+
+  enum CodingKeys: String, CodingKey {
+    case utilization
+    case resetsAt = "resets_at"
+  }
+
+  /// Usage as an integer percentage (0–100). API returns values already as percentages.
+  var percentage: Int {
+    Int(utilization.rounded())
+  }
+
+  /// Utilization as a 0–1 fraction for progress bar rendering.
+  var fraction: Double {
+    min(utilization / 100.0, 1.0)
+  }
+
+  /// Color tier based on usage level.
+  var tierColor: Color {
+    UsageTier.color(for: percentage)
+  }
+
+  /// Gradient for the progress bar, transitioning from a lighter to deeper shade of the tier color.
+  var tierGradient: LinearGradient {
+    UsageTier.gradient(for: percentage)
+  }
+
   /// Whether usage is high enough to show a glow effect on the progress bar.
   var shouldGlow: Bool {
-    percentage >= 80
+    UsageTier.shouldGlow(for: percentage)
   }
 
   /// Parses the ISO8601 reset date string into a Date object.
@@ -156,5 +176,64 @@ struct UsageBucket: Codable {
     let displayFormatter = DateFormatter()
     displayFormatter.dateFormat = "MMM d 'at' ha"
     return "Resets \(displayFormatter.string(from: resetDate))"
+  }
+}
+
+/// Extra usage (additional spend) data from the Anthropic API.
+struct SpendingData: Codable {
+  let isEnabled: Bool
+  let monthlyLimit: Double
+  let usedCredits: Double
+  let utilization: Double
+
+  enum CodingKeys: String, CodingKey {
+    case isEnabled = "is_enabled"
+    case monthlyLimit = "monthly_limit"
+    case usedCredits = "used_credits"
+    case utilization
+  }
+
+  /// Spending as an integer percentage (0–100), using the API-provided utilization.
+  var spentPercentage: Int {
+    Int(utilization.rounded())
+  }
+
+  /// Spending as a 0–1 fraction for progress bar rendering.
+  var spentFraction: Double {
+    min(utilization / 100.0, 1.0)
+  }
+
+  /// Color tier based on spending percentage.
+  var tierColor: Color {
+    UsageTier.color(for: spentPercentage)
+  }
+
+  /// Gradient for the spending progress bar.
+  var tierGradient: LinearGradient {
+    UsageTier.gradient(for: spentPercentage)
+  }
+
+  /// Whether spending is high enough to show a glow effect.
+  var shouldGlow: Bool {
+    UsageTier.shouldGlow(for: spentPercentage)
+  }
+
+  private static let currencyFormatter: NumberFormatter = {
+    let f = NumberFormatter()
+    f.numberStyle = .currency
+    f.currencyCode = "USD"
+    f.minimumFractionDigits = 2
+    f.maximumFractionDigits = 2
+    return f
+  }()
+
+  /// Formatted spent amount in dollars (e.g. "$5.69"). API returns cents.
+  var formattedSpent: String {
+    Self.currencyFormatter.string(from: NSNumber(value: usedCredits / 100.0)) ?? "$0.00"
+  }
+
+  /// Formatted monthly limit in dollars (e.g. "$100.00"). API returns cents.
+  var formattedLimit: String {
+    Self.currencyFormatter.string(from: NSNumber(value: monthlyLimit / 100.0)) ?? "$0.00"
   }
 }

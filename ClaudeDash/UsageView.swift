@@ -38,6 +38,14 @@ struct UsageView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
+
+        // Additional use spending section, shown only when enabled.
+        if let spending = usage.extraUsage, spending.isEnabled {
+          Divider()
+          SpendingRow(spending: spending)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+        }
       } else if let error = service.error {
         VStack(spacing: 8) {
           Image(systemName: "exclamationmark.triangle.fill")
@@ -165,6 +173,48 @@ struct UsageRow: View {
       .frame(height: showDayMarkers ? 22 : 6)
 
       Text(bucket.formattedResetTime)
+        .font(.caption2)
+        .foregroundStyle(.tertiary)
+    }
+  }
+}
+
+/// A spending row showing extra usage with a progress bar and dollar amounts.
+struct SpendingRow: View {
+  let spending: SpendingData
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      HStack {
+        Text("💰 Additional Use")
+          .font(.system(size: 12, weight: .medium))
+          .foregroundStyle(.primary)
+        Spacer()
+        Text("\(spending.spentPercentage)%")
+          .font(.system(size: 12, weight: .semibold, design: .monospaced))
+          .foregroundStyle(spending.tierColor)
+      }
+
+      // Gradient progress bar.
+      GeometryReader { geometry in
+        ZStack(alignment: .leading) {
+          RoundedRectangle(cornerRadius: 4)
+            .fill(Color.primary.opacity(0.1))
+            .frame(height: 6)
+
+          RoundedRectangle(cornerRadius: 4)
+            .fill(spending.tierGradient)
+            .frame(width: max(0, geometry.size.width * spending.spentFraction), height: 6)
+            .shadow(
+              color: spending.shouldGlow ? spending.tierColor.opacity(0.6) : .clear,
+              radius: spending.shouldGlow ? 4 : 0,
+              y: 0
+            )
+        }
+      }
+      .frame(height: 6)
+
+      Text("\(spending.formattedSpent) of \(spending.formattedLimit) limit")
         .font(.caption2)
         .foregroundStyle(.tertiary)
     }
