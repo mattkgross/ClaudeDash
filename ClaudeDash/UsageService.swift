@@ -56,19 +56,17 @@ class UsageService {
 
     // Proactive refresh: if token expires within 5 minutes, refresh preemptively.
     if credentials.isExpired(buffer: 300) {
-      if let refreshed = await refreshAccessToken(using: credentials) {
+      // Always re-read keychain first — another process may have refreshed the token.
+      if let fresh = readOAuthCredentialsFromKeychain(), fresh.accessToken != credentials.accessToken {
+        credentials = fresh
+        cachedCredentials = fresh
+      } else if let refreshed = await refreshAccessToken(using: credentials) {
         credentials = refreshed
         cachedCredentials = refreshed
       } else {
-        // Refresh failed — try re-reading keychain in case user ran /login.
-        if let fresh = readOAuthCredentialsFromKeychain(), fresh.accessToken != credentials.accessToken {
-          credentials = fresh
-          cachedCredentials = fresh
-        } else {
-          error = "Token expired — run /login in Claude Code"
-          cachedCredentials = nil
-          return
-        }
+        error = "Token expired — run /login in Claude Code"
+        cachedCredentials = nil
+        return
       }
     }
 
