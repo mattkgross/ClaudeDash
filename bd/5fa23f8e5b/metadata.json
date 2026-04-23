@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.5.4",
+  "checkpoint_id": "bd5fa23f8e5b",
+  "strategy": "manual-commit",
+  "branch": "master",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "ClaudeDash/Models.swift",
+    "ClaudeDash/UsageView.swift"
+  ],
+  "sessions": [
+    {
+      "metadata": "/bd/5fa23f8e5b/0/metadata.json",
+      "transcript": "/bd/5fa23f8e5b/0/full.jsonl",
+      "content_hash": "/bd/5fa23f8e5b/0/content_hash.txt",
+      "prompt": "/bd/5fa23f8e5b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 25,
+    "cache_creation_tokens": 47927,
+    "cache_read_tokens": 371314,
+    "output_tokens": 5639,
+    "api_call_count": 10
+  }
+}

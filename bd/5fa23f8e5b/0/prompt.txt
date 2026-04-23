@@ -1,0 +1,9 @@
+Does the API result now have a quota for claude design?
+
+---
+
+yes. what are your thoughts for placement and icon?
+
+---
+
+actually, we can replace the sonnet one with this. i never get close with it
