@@ -34,7 +34,9 @@ struct UsageView: View {
         VStack(spacing: 16) {
           UsageRow(icon: "⚡", label: "Session", bucket: usage.fiveHour)
           UsageRow(icon: "🌙", label: "Weekly (All)", bucket: usage.sevenDay, showDayMarkers: true)
-          UsageRow(icon: "✨", label: "Sonnet", bucket: usage.sevenDaySonnet, showDayMarkers: true)
+          if let omelette = usage.sevenDayOmelette {
+            UsageRow(icon: "🎨", label: "Claude Design", bucket: omelette, showDayMarkers: true)
+          }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
