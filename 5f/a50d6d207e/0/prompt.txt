@@ -1,0 +1,17 @@
+i now also have codex installed. i'd like to add a limits section for codex to the dashboard. let's plan: a) what to rename to, b) the layout of the dashboard with the new codex section
+
+---
+
+i do not see its icon in the menu tray
+
+---
+
+i still only see the claude icon and just claude usage in the dashboard
+
+---
+
+i now see the dashboard, but only the calude icon in the menu, but im ok with that
+
+---
+
+eh, give the codex fix a try

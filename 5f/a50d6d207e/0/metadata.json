@@ -1,0 +1,131 @@
+{
+  "cli_version": "0.5.4",
+  "checkpoint_id": "5fa50d6d207e",
+  "session_id": "99c872c8-828f-472c-bed2-7f0feeb31ce6",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-27T20:34:35.300162Z",
+  "branch": "claude/gifted-noether-6aaede",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "AgentDash.xcodeproj/project.pbxproj",
+    "AgentDash/.DS_Store",
+    "AgentDash/AgentDash.entitlements",
+    "AgentDash/AgentDashApp.swift",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/Contents.json",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/icon_128x128.png",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/icon_16x16.png",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/icon_16x16@2x.png",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/icon_256x256.png",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/icon_256x256@2x.png",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/icon_32x32.png",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/icon_32x32@2x.png",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/icon_512x512.png",
+    "AgentDash/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png",
+    "AgentDash/Assets.xcassets/Contents.json",
+    "AgentDash/CodexUsageService.swift",
+    "AgentDash/Info.plist",
+    "AgentDash/Models.swift",
+    "AgentDash/UsageService.swift",
+    "AgentDash/UsageView.swift",
+    "CLAUDE.md",
+    "ClaudeDash.xcodeproj/project.pbxproj",
+    "ClaudeDash/.DS_Store",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/Contents.json",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/icon_128x128.png",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/icon_16x16.png",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/icon_16x16@2x.png",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/icon_256x256.png",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/icon_256x256@2x.png",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/icon_32x32.png",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/icon_32x32@2x.png",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/icon_512x512.png",
+    "ClaudeDash/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png",
+    "ClaudeDash/Assets.xcassets/Contents.json",
+    "ClaudeDash/ClaudeDash.entitlements",
+    "ClaudeDash/ClaudeDashApp.swift",
+    "ClaudeDash/Info.plist",
+    "ClaudeDash/Models.swift",
+    "ClaudeDash/UsageService.swift",
+    "ClaudeDash/UsageView.swift",
+    "Makefile",
+    "README.md"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "6b9aae645b6b",
+  "token_usage": {
+    "input_tokens": 1079,
+    "cache_creation_tokens": 519985,
+    "cache_read_tokens": 14624728,
+    "output_tokens": 149773,
+    "api_call_count": 73
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-27T20:34:32.387371Z",
+    "agent_lines": 1684,
+    "agent_removed": 1246,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1684,
+    "total_lines_changed": 2930,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1698,
+      "agent_lines_removed": 1246
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1700,
+      "agent_lines_removed": 1246
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1693,
+      "agent_lines_removed": 1246
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1693,
+      "agent_lines_removed": 1246
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1693,
+      "agent_lines_removed": 1246
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1684,
+      "agent_lines_removed": 1246
+    }
+  ]
+}
