@@ -67,90 +67,28 @@ enum UsageTier {
   }
 }
 
-/// API response from the Anthropic usage endpoint.
-struct UsageResponse: Codable {
-  let fiveHour: UsageBucket
-  let sevenDay: UsageBucket
-  let sevenDayOmelette: UsageBucket?
-  let extraUsage: SpendingData?
-
-  enum CodingKeys: String, CodingKey {
-    case fiveHour = "five_hour"
-    case sevenDay = "seven_day"
-    case sevenDayOmelette = "seven_day_omelette"
-    case extraUsage = "extra_usage"
-  }
+/// A displayable usage bucket — anything that has a percentage and a reset time can be drawn as a UsageRow.
+/// Conforming types provide the three source-of-truth properties; the rest come from default implementations.
+protocol BucketDisplayable {
+  var percentage: Int { get }
+  var fraction: Double { get }
+  var parsedResetDate: Date? { get }
+  var tierColor: Color { get }
+  var tierGradient: LinearGradient { get }
+  var shouldGlow: Bool { get }
+  var formattedResetTime: String { get }
+  var dayBoundaryMarkers: [DayMarker] { get }
 }
 
-/// A single usage bucket with utilization percentage and reset time.
-struct UsageBucket: Codable {
-  let utilization: Double
-  let resetsAt: String?
-
-  enum CodingKeys: String, CodingKey {
-    case utilization
-    case resetsAt = "resets_at"
-  }
-
-  /// Usage as an integer percentage (0–100). API returns values already as percentages.
-  var percentage: Int {
-    Int(utilization.rounded())
-  }
-
-  /// Utilization as a 0–1 fraction for progress bar rendering.
-  var fraction: Double {
-    min(utilization / 100.0, 1.0)
-  }
-
+extension BucketDisplayable {
   /// Color tier based on usage level.
-  var tierColor: Color {
-    UsageTier.color(for: percentage)
-  }
+  var tierColor: Color { UsageTier.color(for: percentage) }
 
   /// Gradient for the progress bar, transitioning from a lighter to deeper shade of the tier color.
-  var tierGradient: LinearGradient {
-    UsageTier.gradient(for: percentage)
-  }
+  var tierGradient: LinearGradient { UsageTier.gradient(for: percentage) }
 
   /// Whether usage is high enough to show a glow effect on the progress bar.
-  var shouldGlow: Bool {
-    UsageTier.shouldGlow(for: percentage)
-  }
-
-  /// Parses the ISO8601 reset date string into a Date object.
-  var parsedResetDate: Date? {
-    guard let resetsAt = resetsAt else { return nil }
-
-    let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
-    // Try with fractional seconds first, then without.
-    var date = formatter.date(from: resetsAt)
-    if date == nil {
-      formatter.formatOptions = [.withInternetDateTime]
-      date = formatter.date(from: resetsAt)
-    }
-
-    return date
-  }
-
-  /// Day boundary markers for the 7-day progress bar (6 interior ticks at each day boundary).
-  var dayBoundaryMarkers: [DayMarker] {
-    guard let resetDate = parsedResetDate else { return [] }
-
-    let calendar = Calendar.current
-    let windowStart = calendar.date(byAdding: .day, value: -7, to: resetDate)!
-    let today = calendar.startOfDay(for: Date())
-    let weekdayLetters = ["U", "M", "T", "W", "R", "F", "S"]
-
-    return (1...6).map { dayOffset in
-      let boundaryDate = calendar.date(byAdding: .day, value: dayOffset, to: windowStart)!
-      let weekday = calendar.component(.weekday, from: boundaryDate)
-      let label = weekdayLetters[weekday - 1]
-      let isToday = calendar.startOfDay(for: boundaryDate) == today
-      return DayMarker(position: Double(dayOffset) / 7.0, label: label, isToday: isToday)
-    }
-  }
+  var shouldGlow: Bool { UsageTier.shouldGlow(for: percentage) }
 
   /// Formatted reset time string for display.
   var formattedResetTime: String {
@@ -176,6 +114,77 @@ struct UsageBucket: Codable {
     let displayFormatter = DateFormatter()
     displayFormatter.dateFormat = "MMM d 'at' ha"
     return "Resets \(displayFormatter.string(from: resetDate))"
+  }
+
+  /// Day boundary markers for the 7-day progress bar (6 interior ticks at each day boundary).
+  var dayBoundaryMarkers: [DayMarker] {
+    guard let resetDate = parsedResetDate else { return [] }
+
+    let calendar = Calendar.current
+    let windowStart = calendar.date(byAdding: .day, value: -7, to: resetDate)!
+    let today = calendar.startOfDay(for: Date())
+    let weekdayLetters = ["U", "M", "T", "W", "R", "F", "S"]
+
+    return (1...6).map { dayOffset in
+      let boundaryDate = calendar.date(byAdding: .day, value: dayOffset, to: windowStart)!
+      let weekday = calendar.component(.weekday, from: boundaryDate)
+      let label = weekdayLetters[weekday - 1]
+      let isToday = calendar.startOfDay(for: boundaryDate) == today
+      return DayMarker(position: Double(dayOffset) / 7.0, label: label, isToday: isToday)
+    }
+  }
+}
+
+/// API response from the Anthropic usage endpoint.
+struct UsageResponse: Codable {
+  let fiveHour: UsageBucket
+  let sevenDay: UsageBucket
+  let sevenDayOmelette: UsageBucket?
+  let extraUsage: SpendingData?
+
+  enum CodingKeys: String, CodingKey {
+    case fiveHour = "five_hour"
+    case sevenDay = "seven_day"
+    case sevenDayOmelette = "seven_day_omelette"
+    case extraUsage = "extra_usage"
+  }
+}
+
+/// A single usage bucket with utilization percentage and reset time.
+struct UsageBucket: Codable, BucketDisplayable {
+  let utilization: Double
+  let resetsAt: String?
+
+  enum CodingKeys: String, CodingKey {
+    case utilization
+    case resetsAt = "resets_at"
+  }
+
+  /// Usage as an integer percentage (0–100). API returns values already as percentages.
+  var percentage: Int {
+    Int(utilization.rounded())
+  }
+
+  /// Utilization as a 0–1 fraction for progress bar rendering.
+  var fraction: Double {
+    min(utilization / 100.0, 1.0)
+  }
+
+  /// Parses the ISO8601 reset date string into a Date object.
+  var parsedResetDate: Date? {
+    guard let resetsAt = resetsAt else { return nil }
+
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+    // Try with fractional seconds first, then without.
+    var date = formatter.date(from: resetsAt)
+    if date == nil {
+      formatter.formatOptions = [.withInternetDateTime]
+      date = formatter.date(from: resetsAt)
+    }
+
+    return date
   }
 }
 
@@ -235,5 +244,76 @@ struct SpendingData: Codable {
   /// Formatted monthly limit in dollars (e.g. "$100.00"). API returns cents.
   var formattedLimit: String {
     Self.currencyFormatter.string(from: NSNumber(value: monthlyLimit / 100.0)) ?? "$0.00"
+  }
+}
+
+// MARK: - Codex (OpenAI) usage models
+
+/// Top-level response from `https://chatgpt.com/backend-api/wham/usage`.
+/// Mirrors `RateLimitStatusPayload` from the openai/codex repo (codex-rs/backend-client).
+struct CodexUsageResponse: Codable {
+  let planType: String?
+  let rateLimit: CodexRateLimit?
+  let credits: CodexCredits?
+
+  enum CodingKeys: String, CodingKey {
+    case planType = "plan_type"
+    case rateLimit = "rate_limit"
+    case credits
+  }
+}
+
+/// The two-window rate limit container returned by Codex.
+struct CodexRateLimit: Codable {
+  /// 5-hour rolling window.
+  let primaryWindow: CodexUsageBucket?
+  /// Weekly window.
+  let secondaryWindow: CodexUsageBucket?
+
+  enum CodingKeys: String, CodingKey {
+    case primaryWindow = "primary_window"
+    case secondaryWindow = "secondary_window"
+  }
+}
+
+/// A single Codex usage bucket. Wire format uses `used_percent` (already a 0–100 int) and a Unix-epoch `reset_at`.
+struct CodexUsageBucket: Codable, BucketDisplayable {
+  let usedPercent: Int
+  let limitWindowSeconds: Int?
+  let resetAt: Int?
+
+  enum CodingKeys: String, CodingKey {
+    case usedPercent = "used_percent"
+    case limitWindowSeconds = "limit_window_seconds"
+    case resetAt = "reset_at"
+  }
+
+  /// Codex returns `used_percent` as a 0–100 integer, so percentage is just that value clamped to 100 for display.
+  var percentage: Int {
+    min(max(usedPercent, 0), 100)
+  }
+
+  /// Fraction (0–1) for progress bar rendering. Allow over-100% to clamp visually at full bar.
+  var fraction: Double {
+    min(Double(usedPercent) / 100.0, 1.0)
+  }
+
+  /// Codex sends `reset_at` as Unix epoch seconds; convert to `Date` for the shared formatter.
+  var parsedResetDate: Date? {
+    resetAt.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+  }
+}
+
+/// Credits balance reported alongside the rate limits.
+struct CodexCredits: Codable {
+  let hasCredits: Bool
+  let unlimited: Bool
+  /// Codex returns this as a pre-formatted currency string when set (e.g. "$5.69"), or null if unset.
+  let balance: String?
+
+  enum CodingKeys: String, CodingKey {
+    case hasCredits = "has_credits"
+    case unlimited
+    case balance
   }
 }
