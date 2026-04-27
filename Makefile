@@ -1,4 +1,4 @@
-APP_NAME = ClaudeDash
+APP_NAME = AgentDash
 CONFIGURATION = Release
 BUILD_DIR = $(CURDIR)/build/$(CONFIGURATION)
 INSTALL_DIR = /Applications
