@@ -193,23 +193,36 @@ struct SpendingData: Codable {
   let isEnabled: Bool
   let monthlyLimit: Double
   let usedCredits: Double
-  let utilization: Double
+  let utilization: Double?
+  let currency: String?
 
   enum CodingKeys: String, CodingKey {
     case isEnabled = "is_enabled"
     case monthlyLimit = "monthly_limit"
     case usedCredits = "used_credits"
     case utilization
+    case currency
   }
 
-  /// Spending as an integer percentage (0–100), using the API-provided utilization.
+  /// Decodes extra usage data while tolerating undocumented response-shape changes.
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+
+    isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? false
+    monthlyLimit = try Self.decodeDouble(from: container, forKey: .monthlyLimit) ?? 0
+    usedCredits = try Self.decodeDouble(from: container, forKey: .usedCredits) ?? 0
+    utilization = try Self.decodeDouble(from: container, forKey: .utilization)
+    currency = try container.decodeIfPresent(String.self, forKey: .currency)
+  }
+
+  /// Spending as an integer percentage (0–100), deriving utilization when needed.
   var spentPercentage: Int {
-    Int(utilization.rounded())
+    Int(spendingUtilization.rounded())
   }
 
   /// Spending as a 0–1 fraction for progress bar rendering.
   var spentFraction: Double {
-    min(utilization / 100.0, 1.0)
+    min(spendingUtilization / 100.0, 1.0)
   }
 
   /// Color tier based on spending percentage.
@@ -244,6 +257,28 @@ struct SpendingData: Codable {
   /// Formatted monthly limit in dollars (e.g. "$100.00"). API returns cents.
   var formattedLimit: String {
     Self.currencyFormatter.string(from: NSNumber(value: monthlyLimit / 100.0)) ?? "$0.00"
+  }
+
+  /// Spending utilization as a percentage, derived when the API omits it.
+  private var spendingUtilization: Double {
+    if let utilization {
+      return utilization
+    }
+    guard monthlyLimit > 0 else {
+      return usedCredits > 0 ? 100 : 0
+    }
+    return (usedCredits / monthlyLimit) * 100.0
+  }
+
+  /// Decodes numeric API fields that may arrive as either JSON numbers or strings.
+  private static func decodeDouble(from container: KeyedDecodingContainer<CodingKeys>, forKey key: CodingKeys) throws -> Double? {
+    if let number = try? container.decodeIfPresent(Double.self, forKey: key) {
+      return number
+    }
+    if let string = try? container.decodeIfPresent(String.self, forKey: key) {
+      return Double(string)
+    }
+    return nil
   }
 }
 
