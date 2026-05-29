@@ -139,13 +139,11 @@ extension BucketDisplayable {
 struct UsageResponse: Codable {
   let fiveHour: UsageBucket
   let sevenDay: UsageBucket
-  let sevenDayOmelette: UsageBucket?
   let extraUsage: SpendingData?
 
   enum CodingKeys: String, CodingKey {
     case fiveHour = "five_hour"
     case sevenDay = "seven_day"
-    case sevenDayOmelette = "seven_day_omelette"
     case extraUsage = "extra_usage"
   }
 }
