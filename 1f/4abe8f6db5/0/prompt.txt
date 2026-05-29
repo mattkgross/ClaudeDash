@@ -1,0 +1,5 @@
+claude design now shares quota with the normal calude subscription. so we can remove the claude design section. while youre there, take a look at the current payload and lmk if there's any other fields that may be worth displaying
+
+---
+
+relogged in
