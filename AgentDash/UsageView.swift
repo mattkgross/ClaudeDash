@@ -83,16 +83,21 @@ struct UsageView: View {
   @ViewBuilder
   private var codexContent: some View {
     if let codex = codexService.usage, let rl = codex.rateLimit {
-      VStack(spacing: 16) {
-        if let primary = rl.primaryWindow {
-          UsageRow(icon: "⚡", label: "Session 5h", bucket: primary)
+      let windows = rl.orderedWindows
+      if !windows.isEmpty {
+        VStack(spacing: 16) {
+          ForEach(Array(windows.enumerated()), id: \.offset) { _, window in
+            UsageRow(
+              icon: window.windowIcon,
+              label: window.windowLabel,
+              bucket: window,
+              showDayMarkers: window.showsDayMarkers
+            )
+          }
         }
-        if let secondary = rl.secondaryWindow {
-          UsageRow(icon: "🌙", label: "Weekly", bucket: secondary, showDayMarkers: true)
-        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
       }
-      .padding(.horizontal, 16)
-      .padding(.vertical, 14)
 
       if let credits = codex.credits, credits.unlimited || credits.hasCredits || credits.balance != nil {
         Divider()

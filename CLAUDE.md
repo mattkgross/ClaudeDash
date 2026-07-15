@@ -1,7 +1,7 @@
 # AgentDash
 
 ## Project Overview
-macOS menu bar app (SwiftUI, macOS 14+) that displays Claude Code and Codex CLI usage. Lives in the menu bar, shows each provider's 5-hour session percentage as the icon label, opens a popover with stacked sections (Claude on top, Codex below) when clicked. Each section auto-hides when its CLI isn't installed.
+macOS menu bar app (SwiftUI, macOS 14+) that displays Claude Code and Codex CLI usage. Lives in the menu bar, shows each provider's shortest-window percentage as the icon label (the 5-hour session where one is reported, otherwise the weekly cap), opens a popover with stacked sections (Claude on top, Codex below) when clicked. Each section auto-hides when its CLI isn't installed.
 
 ## Architecture
 - **AgentDashApp.swift** — `@main` entry point, `MenuBarExtra` scene with `.window` style. Creates one `UsageService` (Claude) and one `CodexUsageService` (Codex), passes both to `UsageView`. Menu bar label renders `🧠 X% 🤖 Y%`, each segment shown only if that provider is signed in.
@@ -22,7 +22,9 @@ macOS menu bar app (SwiftUI, macOS 14+) that displays Claude Code and Codex CLI 
 ### Codex
 - OAuth token read from `~/.codex/auth.json` (mode 0600). Shape: `{ "tokens": { "access_token": "...", "account_id": "..." } }`
 - API endpoint: `GET https://chatgpt.com/backend-api/wham/usage` with `Authorization: Bearer {access_token}`, `ChatGPT-Account-Id: {account_id}`, and a `User-Agent` header.
-- Response shape: `{ rate_limit: { primary_window: { used_percent, reset_at, ... }, secondary_window: ... }, credits: { has_credits, unlimited, balance } }`. `primary_window` = 5-hour, `secondary_window` = weekly. `reset_at` is Unix epoch seconds.
+- Response shape: `{ rate_limit: { primary_window: { used_percent, limit_window_seconds, reset_at, ... }, secondary_window: ... }, credits: { has_credits, unlimited, balance } }`. `reset_at` is Unix epoch seconds.
+- **Window identity comes from `limit_window_seconds`, never from the field name.** The field names describe position, not duration — as of Jul 2026 a Plus account returns the *weekly* window (`limit_window_seconds: 604800`) in `primary_window` with `secondary_window: null`, and no 5-hour window at all. Read windows via `CodexRateLimit.orderedWindows`, which sorts by real duration; labels/icons come from `CodexUsageBucket.windowLabel`/`windowIcon`.
+- Numeric fields are decoded tolerantly (int/float/string) — see `CodexUsageBucket.init(from:)`, mirroring `SpendingData`.
 - Token refresh: not implemented locally — relies on the Codex CLI to refresh `auth.json` in place.
 
 ## Build

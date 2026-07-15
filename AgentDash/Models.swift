@@ -296,22 +296,35 @@ struct CodexUsageResponse: Codable {
   }
 }
 
-/// The two-window rate limit container returned by Codex.
+/// The rate limit container returned by Codex.
+///
+/// The field names describe position, not duration: Codex has shipped a weekly window in
+/// `primary_window` with `secondary_window` null. Read windows through `orderedWindows` so they are
+/// identified by their actual `limit_window_seconds` rather than by which field they arrived in.
 struct CodexRateLimit: Codable {
-  /// 5-hour rolling window.
   let primaryWindow: CodexUsageBucket?
-  /// Weekly window.
   let secondaryWindow: CodexUsageBucket?
 
   enum CodingKeys: String, CodingKey {
     case primaryWindow = "primary_window"
     case secondaryWindow = "secondary_window"
   }
+
+  /// Every window the API actually returned, shortest duration first so a rolling
+  /// session sorts above a weekly cap. Windows of unknown duration sort last.
+  var orderedWindows: [CodexUsageBucket] {
+    [primaryWindow, secondaryWindow]
+      .compactMap { $0 }
+      .sorted { ($0.limitWindowSeconds ?? Int.max) < ($1.limitWindowSeconds ?? Int.max) }
+  }
 }
 
-/// A single Codex usage bucket. Wire format uses `used_percent` (already a 0–100 int) and a Unix-epoch `reset_at`.
+/// A single Codex usage bucket. Wire format uses `used_percent` (already 0–100) and a Unix-epoch `reset_at`.
+///
+/// `limitWindowSeconds` is the source of truth for what the window means — never infer duration
+/// from the field the bucket arrived in.
 struct CodexUsageBucket: Codable, BucketDisplayable {
-  let usedPercent: Int
+  let usedPercent: Double
   let limitWindowSeconds: Int?
   let resetAt: Int?
 
@@ -321,19 +334,68 @@ struct CodexUsageBucket: Codable, BucketDisplayable {
     case resetAt = "reset_at"
   }
 
-  /// Codex returns `used_percent` as a 0–100 integer, so percentage is just that value clamped to 100 for display.
-  var percentage: Int {
-    min(max(usedPercent, 0), 100)
+  /// Decodes while tolerating numeric fields arriving as ints, floats, or strings, so a widened
+  /// `used_percent` can't take down the whole Codex section.
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+
+    usedPercent = try Self.decodeNumber(from: container, forKey: .usedPercent) ?? 0
+    limitWindowSeconds = try Self.decodeNumber(from: container, forKey: .limitWindowSeconds).map { Int($0) }
+    resetAt = try Self.decodeNumber(from: container, forKey: .resetAt).map { Int($0) }
   }
 
-  /// Fraction (0–1) for progress bar rendering. Allow over-100% to clamp visually at full bar.
+  /// Human-readable name for this window, derived from how long the window actually is.
+  var windowLabel: String {
+    guard let seconds = limitWindowSeconds else { return "Usage" }
+
+    switch seconds {
+    case 604800:
+      return "Weekly"
+    case 86400:
+      return "Daily"
+    case 86401...:
+      return "\(seconds / 86400)-Day"
+    default:
+      return "Session \(max(seconds / 3600, 1))h"
+    }
+  }
+
+  /// Moon for multi-day caps, lightning for short rolling sessions — matches the Claude section.
+  var windowIcon: String {
+    guard let seconds = limitWindowSeconds else { return "⚡" }
+    return seconds >= 86400 ? "🌙" : "⚡"
+  }
+
+  /// Day ticks only make sense on a true 7-day bar, since `dayBoundaryMarkers` derives the window
+  /// start by subtracting exactly 7 days from the reset date.
+  var showsDayMarkers: Bool {
+    limitWindowSeconds == 604800
+  }
+
+  /// Usage as an integer percentage (0–100), clamped for display.
+  var percentage: Int {
+    min(max(Int(usedPercent.rounded()), 0), 100)
+  }
+
+  /// Fraction (0–1) for progress bar rendering. Over-100% clamps visually at a full bar.
   var fraction: Double {
-    min(Double(usedPercent) / 100.0, 1.0)
+    min(max(usedPercent / 100.0, 0), 1.0)
   }
 
   /// Codex sends `reset_at` as Unix epoch seconds; convert to `Date` for the shared formatter.
   var parsedResetDate: Date? {
     resetAt.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+  }
+
+  /// Decodes numeric API fields that may arrive as either JSON numbers or strings.
+  private static func decodeNumber(from container: KeyedDecodingContainer<CodingKeys>, forKey key: CodingKeys) throws -> Double? {
+    if let number = try? container.decodeIfPresent(Double.self, forKey: key) {
+      return number
+    }
+    if let string = try? container.decodeIfPresent(String.self, forKey: key) {
+      return Double(string)
+    }
+    return nil
   }
 }
 

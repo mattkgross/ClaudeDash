@@ -19,10 +19,16 @@ struct AgentDashApp: App {
         .monospacedDigit()
         .foregroundStyle(claudeService.usage?.fiveHour.tierColor ?? Color.secondary)
       + Text("   ")
-      + Text("🤖 \(codexService.usage?.rateLimit?.primaryWindow?.percentage ?? 0)%")
+      + Text("🤖 \(codexBucket?.percentage ?? 0)%")
         .monospacedDigit()
-        .foregroundStyle(codexService.usage?.rateLimit?.primaryWindow?.tierColor ?? Color.secondary)
+        .foregroundStyle(codexBucket?.tierColor ?? Color.secondary)
     }
     .menuBarExtraStyle(.window)
+  }
+
+  /// The Codex window to summarize in the menu bar: the shortest one available, which is the
+  /// 5-hour session when Codex reports one and the weekly cap when it doesn't.
+  private var codexBucket: CodexUsageBucket? {
+    codexService.usage?.rateLimit?.orderedWindows.first
   }
 }
