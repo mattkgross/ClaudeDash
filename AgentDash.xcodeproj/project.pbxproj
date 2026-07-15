@@ -7,15 +7,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10001 /* AgentDashApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001; };
-		A10002 /* UsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002; };
-		A10003 /* UsageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003; };
-		A10004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004; };
-		A10005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20005; };
-		A10006 /* CodexUsageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20008; };
+		2C822DB6F3C5C84F278B984E /* CodexUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4290E8315AF03AFA942702BF /* CodexUsageTests.swift */; };
+		3CC4B05568C10F51387A9C77 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4103C84CB62D25C16F937017 /* Cocoa.framework */; };
+		70686E57C6DD28E82C4EB56C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004 /* Models.swift */; };
+		A10001 /* AgentDashApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* AgentDashApp.swift */; };
+		A10002 /* UsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* UsageView.swift */; };
+		A10003 /* UsageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003 /* UsageService.swift */; };
+		A10004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004 /* Models.swift */; };
+		A10005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20005 /* Assets.xcassets */; };
+		A10006 /* CodexUsageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20008 /* CodexUsageService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4103C84CB62D25C16F937017 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		4290E8315AF03AFA942702BF /* CodexUsageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CodexUsageTests.swift; sourceTree = "<group>"; };
 		A20001 /* AgentDashApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentDashApp.swift; sourceTree = "<group>"; };
 		A20002 /* UsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageView.swift; sourceTree = "<group>"; };
 		A20003 /* UsageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageService.swift; sourceTree = "<group>"; };
@@ -25,6 +30,7 @@
 		A20007 /* AgentDash.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AgentDash.entitlements; sourceTree = "<group>"; };
 		A20008 /* CodexUsageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexUsageService.swift; sourceTree = "<group>"; };
 		A20010 /* AgentDash.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AgentDash.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BEA1835002399F0A15D78EAC /* AgentDashTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgentDashTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,14 +41,41 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D5A44617040C3DF618BA5EB1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3CC4B05568C10F51387A9C77 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3E91AC2C80E643C4FBB8CD76 /* AgentDashTests */ = {
+			isa = PBXGroup;
+			children = (
+				4290E8315AF03AFA942702BF /* CodexUsageTests.swift */,
+			);
+			name = AgentDashTests;
+			path = AgentDashTests;
+			sourceTree = SOURCE_ROOT;
+		};
+		992BADCE79A2BBA6FB35A9AB /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				4103C84CB62D25C16F937017 /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
 		A40001 = {
 			isa = PBXGroup;
 			children = (
 				A40002 /* AgentDash */,
 				A40003 /* Products */,
+				D87117BADA0B5B91F71855F6 /* Frameworks */,
+				3E91AC2C80E643C4FBB8CD76 /* AgentDashTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -65,13 +98,39 @@
 			isa = PBXGroup;
 			children = (
 				A20010 /* AgentDash.app */,
+				BEA1835002399F0A15D78EAC /* AgentDashTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D87117BADA0B5B91F71855F6 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				992BADCE79A2BBA6FB35A9AB /* OS X */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		370021B74543E69224A82018 /* AgentDashTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 849402A878F5C4946E641F21 /* Build configuration list for PBXNativeTarget "AgentDashTests" */;
+			buildPhases = (
+				989477AC3A6841F6AB917C1E /* Sources */,
+				D5A44617040C3DF618BA5EB1 /* Frameworks */,
+				79C9B693D9EB3E157C8A0EFB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AgentDashTests;
+			productName = AgentDashTests;
+			productReference = BEA1835002399F0A15D78EAC /* AgentDashTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		A50001 /* AgentDash */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A70002 /* Build configuration list for PBXNativeTarget "AgentDash" */;
@@ -118,11 +177,19 @@
 			projectRoot = "";
 			targets = (
 				A50001 /* AgentDash */,
+				370021B74543E69224A82018 /* AgentDashTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		79C9B693D9EB3E157C8A0EFB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A60002 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -134,6 +201,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		989477AC3A6841F6AB917C1E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2C822DB6F3C5C84F278B984E /* CodexUsageTests.swift in Sources */,
+				70686E57C6DD28E82C4EB56C /* Models.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A60001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -149,6 +225,22 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		85F87CBBE3B2A1011107873D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattkgross.AgentDashTests;
+				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		A90001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -315,9 +407,34 @@
 			};
 			name = Release;
 		};
+		E77123EC2A62938B6241049C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattkgross.AgentDashTests;
+				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		849402A878F5C4946E641F21 /* Build configuration list for PBXNativeTarget "AgentDashTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				85F87CBBE3B2A1011107873D /* Release */,
+				E77123EC2A62938B6241049C /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A70001 /* Build configuration list for PBXProject "AgentDash" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -337,7 +454,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A80001 /* Project object */;
 }

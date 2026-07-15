@@ -34,9 +34,21 @@ xcodebuild -project AgentDash.xcodeproj -scheme AgentDash -configuration Debug b
 Or via the `Makefile`:
 ```
 make build      # debug build
+make test       # runs the AgentDashTests suite
 make install    # installs to /Applications and launches
 make run        # builds and runs from the build directory
 ```
+
+## Tests
+`AgentDashTests` (Swift Testing) covers Codex response decoding and window identification — the wire
+format is the part of this app that changes underneath us, so that's where the tests are.
+
+The target is deliberately **host-less**: it has no `TEST_HOST` and compiles `Models.swift` directly
+into the bundle, so tests decode JSON without launching the menu bar app or its sandbox. Adding a
+model file that tests need means adding it to the `AgentDashTests` target too.
+
+When Codex or Anthropic changes a payload, add the real captured JSON as a fixture case rather than
+adjusting an assertion to match — the existing fixtures are verbatim wire responses, dated in comments.
 
 ## Key Decisions
 - `LSUIElement = true` in Info.plist hides the dock icon

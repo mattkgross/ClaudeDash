@@ -3,10 +3,13 @@ CONFIGURATION = Release
 BUILD_DIR = $(CURDIR)/build/$(CONFIGURATION)
 INSTALL_DIR = /Applications
 
-.PHONY: build install run clean
+.PHONY: build test install run clean
 
 build:
 	xcodebuild -project $(APP_NAME).xcodeproj -scheme $(APP_NAME) -configuration $(CONFIGURATION) CONFIGURATION_BUILD_DIR="$(BUILD_DIR)" build
+
+test:
+	xcodebuild test -project $(APP_NAME).xcodeproj -scheme $(APP_NAME) -configuration Debug -destination 'platform=macOS'
 
 install: build
 	@pkill -x $(APP_NAME) 2>/dev/null || true
