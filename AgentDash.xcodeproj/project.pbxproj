@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2C822DB6F3C5C84F278B984E /* CodexUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4290E8315AF03AFA942702BF /* CodexUsageTests.swift */; };
+		FAB1E00000000000000000A1 /* AnthropicUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB1E00000000000000000A2 /* AnthropicUsageTests.swift */; };
 		3CC4B05568C10F51387A9C77 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4103C84CB62D25C16F937017 /* Cocoa.framework */; };
 		70686E57C6DD28E82C4EB56C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004 /* Models.swift */; };
 		A10001 /* AgentDashApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* AgentDashApp.swift */; };
@@ -21,6 +22,7 @@
 /* Begin PBXFileReference section */
 		4103C84CB62D25C16F937017 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		4290E8315AF03AFA942702BF /* CodexUsageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CodexUsageTests.swift; sourceTree = "<group>"; };
+		FAB1E00000000000000000A2 /* AnthropicUsageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AnthropicUsageTests.swift; sourceTree = "<group>"; };
 		A20001 /* AgentDashApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentDashApp.swift; sourceTree = "<group>"; };
 		A20002 /* UsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageView.swift; sourceTree = "<group>"; };
 		A20003 /* UsageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageService.swift; sourceTree = "<group>"; };
@@ -56,6 +58,7 @@
 			isa = PBXGroup;
 			children = (
 				4290E8315AF03AFA942702BF /* CodexUsageTests.swift */,
+				FAB1E00000000000000000A2 /* AnthropicUsageTests.swift */,
 			);
 			name = AgentDashTests;
 			path = AgentDashTests;
@@ -206,6 +209,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2C822DB6F3C5C84F278B984E /* CodexUsageTests.swift in Sources */,
+				FAB1E00000000000000000A1 /* AnthropicUsageTests.swift in Sources */,
 				70686E57C6DD28E82C4EB56C /* Models.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -8,7 +8,7 @@ macOS menu bar app (SwiftUI, macOS 14+) that displays Claude Code and Codex CLI 
 - **UsageView.swift** — Popover UI. Stacks a Claude section and a Codex section, each with its own `SectionHeader` (icon + label + per-provider refresh button). Renders `UsageRow` instances generic over `BucketDisplayable`. Footer with launch-at-login and quit.
 - **UsageService.swift** — `@Observable` class for Claude. Reads keychain token, polls Anthropic API every 60s, handles in-memory token refresh.
 - **CodexUsageService.swift** — `@Observable` class for Codex. Reads `~/.codex/auth.json` via `/bin/cat`, polls the ChatGPT backend every 60s. Exposes `isAvailable` so the view can hide the section if Codex isn't installed. Relies on the Codex CLI to refresh its own token; we re-read `auth.json` each poll.
-- **Models.swift** — Codable types for both providers. `BucketDisplayable` protocol with default-implemented styling (tier color, gradient, glow, formatted reset time, day markers) so `UsageRow` works for either provider's bucket. Anthropic types: `UsageResponse`, `UsageBucket`, `SpendingData`, `DayMarker`, `UsageTier`. Codex types: `CodexUsageResponse`, `CodexRateLimit`, `CodexUsageBucket`, `CodexCredits`.
+- **Models.swift** — Codable types for both providers. `BucketDisplayable` protocol with default-implemented styling (tier color, gradient, glow, formatted reset time, day markers) so `UsageRow` works for either provider's bucket. Anthropic types: `UsageResponse`, `UsageBucket`, `UsageLimit`, `SpendingData`, `DayMarker`, `UsageTier`. Codex types: `CodexUsageResponse`, `CodexRateLimit`, `CodexUsageBucket`, `CodexCredits`. `ISO8601DateParser` is the shared reset-timestamp parser (tolerates the endpoint's fractional-seconds variant) used by both `UsageBucket` and `UsageLimit`.
 
 ## Data Sources
 
@@ -17,6 +17,8 @@ macOS menu bar app (SwiftUI, macOS 14+) that displays Claude Code and Codex CLI 
 - Token path in JSON: `claudeAiOauth.accessToken`
 - API endpoint: `GET https://api.anthropic.com/api/oauth/usage` with `Authorization: Bearer {token}` and `anthropic-beta: oauth-2025-04-20`
 - API returns utilization as a percentage (e.g., `29.0` = 29%), NOT as a 0–1 fraction
+- The top-level `five_hour`/`seven_day` buckets drive the Session and Weekly rows. Per-model weekly caps live in a generic `limits` array, **not** in dedicated fields — the old `seven_day_sonnet`/`seven_day_omelette` keys still appear but now decode to null. Each `limits` entry is `{ kind, group, percent (0–100), resets_at (ISO8601 string), scope: { model: { display_name } } }`.
+- **Per-model caps are identified by data, never by a hardcoded key** (same principle as Codex's `limit_window_seconds`). The Fable weekly row reads `UsageResponse.fableWeekly`, which finds the `limits` entry with `kind == "weekly_scoped"` whose model `display_name` case-insensitively contains "fable" (tolerating a version suffix like "Fable 5"); the row label comes from that `display_name`. This mirrors how Claude Code's own CLI renders scoped weekly bars, and it avoids the field-goes-null rot that removed the earlier Sonnet/Design rows.
 - Token refresh: `POST https://platform.claude.com/v1/oauth/token` with `grant_type=refresh_token` (in-memory only, never written back to keychain)
 
 ### Codex
@@ -40,8 +42,10 @@ make run        # builds and runs from the build directory
 ```
 
 ## Tests
-`AgentDashTests` (Swift Testing) covers Codex response decoding and window identification — the wire
-format is the part of this app that changes underneath us, so that's where the tests are.
+`AgentDashTests` (Swift Testing) covers response decoding for both providers — the wire format is the
+part of this app that changes underneath us, so that's where the tests are. `CodexUsageTests` covers
+Codex window identification; `AnthropicUsageTests` covers the Claude `limits` array and Fable-cap
+identification.
 
 The target is deliberately **host-less**: it has no `TEST_HOST` and compiles `Models.swift` directly
 into the bundle, so tests decode JSON without launching the menu bar app or its sandbox. Adding a

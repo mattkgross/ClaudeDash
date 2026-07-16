@@ -135,16 +135,40 @@ extension BucketDisplayable {
   }
 }
 
+/// Parses the API's ISO8601 reset timestamps, tolerating the fractional-seconds variant the
+/// endpoint emits (six-digit fractions on some fields, none on others).
+enum ISO8601DateParser {
+  static func date(from string: String?) -> Date? {
+    guard let string else { return nil }
+
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    if let date = formatter.date(from: string) { return date }
+
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter.date(from: string)
+  }
+}
+
 /// API response from the Anthropic usage endpoint.
 struct UsageResponse: Codable {
   let fiveHour: UsageBucket
   let sevenDay: UsageBucket
   let extraUsage: SpendingData?
+  let limits: [UsageLimit]?
 
   enum CodingKeys: String, CodingKey {
     case fiveHour = "five_hour"
     case sevenDay = "seven_day"
     case extraUsage = "extra_usage"
+    case limits
+  }
+
+  /// The Fable weekly cap, if this account has one. The API delivers per-model quotas through the
+  /// generic `limits` array rather than a dedicated field — the old `seven_day_sonnet` and
+  /// `seven_day_omelette` keys now decode to null — so Fable is found by its scoped model name.
+  var fableWeekly: UsageLimit? {
+    limits?.first { $0.isFableWeekly }
   }
 }
 
@@ -170,19 +194,70 @@ struct UsageBucket: Codable, BucketDisplayable {
 
   /// Parses the ISO8601 reset date string into a Date object.
   var parsedResetDate: Date? {
-    guard let resetsAt = resetsAt else { return nil }
+    ISO8601DateParser.date(from: resetsAt)
+  }
+}
 
-    let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+/// A single entry from the usage response's `limits` array. Each entry describes one rate-limit
+/// window with its own `kind` and optional model `scope`; `percent` is already 0–100 and `resets_at`
+/// is an ISO8601 string, so it renders through the same `BucketDisplayable` path as `UsageBucket`.
+struct UsageLimit: Codable, BucketDisplayable {
+  let kind: String
+  let percent: Double
+  let resetsAt: String?
+  let scope: Scope?
 
-    // Try with fractional seconds first, then without.
-    var date = formatter.date(from: resetsAt)
-    if date == nil {
-      formatter.formatOptions = [.withInternetDateTime]
-      date = formatter.date(from: resetsAt)
+  enum CodingKeys: String, CodingKey {
+    case kind
+    case percent
+    case resetsAt = "resets_at"
+    case scope
+  }
+
+  /// What a scoped limit applies to. Model scopes carry a `display_name`; the field may be null.
+  struct Scope: Codable {
+    let model: Named?
+
+    struct Named: Codable {
+      let displayName: String?
+
+      enum CodingKeys: String, CodingKey {
+        case displayName = "display_name"
+      }
     }
+  }
 
-    return date
+  /// Display name of the scoped model, when this limit is model-scoped.
+  var modelDisplayName: String? {
+    scope?.model?.displayName
+  }
+
+  /// Whether this is the weekly cap scoped to the Fable model. The server owns the display name, so
+  /// match case-insensitively and tolerate a version suffix like "Fable 5".
+  var isFableWeekly: Bool {
+    guard kind == "weekly_scoped", let name = modelDisplayName else { return false }
+    return name.lowercased().contains("fable")
+  }
+
+  /// A weekly window earns day-of-week ticks; `dayBoundaryMarkers` derives the window start by
+  /// subtracting exactly 7 days from the reset date, so only true 7-day windows qualify.
+  var showsDayMarkers: Bool {
+    kind.hasPrefix("weekly")
+  }
+
+  /// Usage as an integer percentage (0–100). The API returns values already as percentages.
+  var percentage: Int {
+    Int(percent.rounded())
+  }
+
+  /// Utilization as a 0–1 fraction for progress bar rendering.
+  var fraction: Double {
+    min(percent / 100.0, 1.0)
+  }
+
+  /// Parses the ISO8601 reset date string into a Date object.
+  var parsedResetDate: Date? {
+    ISO8601DateParser.date(from: resetsAt)
   }
 }
 

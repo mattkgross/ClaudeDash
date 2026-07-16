@@ -52,6 +52,9 @@ struct UsageView: View {
       VStack(spacing: 16) {
         UsageRow(icon: "⚡", label: "Session", bucket: usage.fiveHour)
         UsageRow(icon: "🌙", label: "Weekly", bucket: usage.sevenDay, showDayMarkers: true)
+        if let fable = usage.fableWeekly {
+          UsageRow(icon: "📖", label: fable.modelDisplayName ?? "Fable", bucket: fable, showDayMarkers: fable.showsDayMarkers)
+        }
       }
       .padding(.horizontal, 16)
       .padding(.vertical, 14)
